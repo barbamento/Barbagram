@@ -33,9 +33,27 @@ class message():
             self.update_id=self.message_json["update_id"]
             self.chat_id=self.message_json["message"]["chat"]["id"]
             self.text=self.message_json["message"]["text"]
-    
-    def print(self):
-        return dir(self)
+
+class button:
+    def __init__(self,text,callback):
+        pass
+
+class keyboard:
+    def __init__(self,buttons,shape=None):
+        if shape==None:
+            shape=[len(buttons),1]
+        array=[]
+        for i in buttons:
+            array+=[{"text":i}]
+        self.keyboard=array
+
+    def to_inline(self,callback_data=None):#do a function in the buttons class then call it iteratively
+        if callback_data!=None:
+            if len(self.keyboard)!=len(callback_data):
+                raise ValueError ("keyboard and callback data dimension mismatch")
+        for dict,i in list(zip(self.keyboard,range(len(self.keyboard)))):
+            dict["callback_data"]=i
+        self.keyboard={"inline_keyboard":[self.keyboard]}
 
 class telegram:
     def __init__(self,TOKEN):
@@ -54,7 +72,7 @@ class telegram:
             print(offset)
             return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/getUpdates?offset="+str(offset)).json()
   
-    def InlineMarkupButton(self,**kwargs):
+    def InlineMarkupButton(self,**kwargs):#deprecated?
         button={}
         for i in kwargs:
             button[i]=kwargs[i]
@@ -63,20 +81,12 @@ class telegram:
     def sendMessage(self,**kwargs):
         params=self.to_message(**kwargs)
         params["method"]="sendMessage"
-        params["reply_markup"]={'keyboard':[[{'text':'supa'},{'text':'mario'}]]}
         print(params)
         return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/",json=params)
-
-    def sendMessage2(self,**kwargs):
-        params=self.to_message(**kwargs)
-        print(params)
-        return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/sendMessage",params=params)
 
     def to_message(self,**kwargs):
         base_structure={}
         for i in kwargs:
-            if i not in base_structure2:
-                raise ValuesView("{} is not a valid message key".format(i))
             base_structure[i]=kwargs[i]
         return base_structure
 
