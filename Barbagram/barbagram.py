@@ -6,54 +6,59 @@ import requests
 import polling2
 import json
 
-if True:
-    base_structure2={"chat_id":None,
-                    "text":None,
-                    "parse_mode":None,
-                    "entities":None,
-                    "disable_web_page_preview":None,
-                    "disable_notification":None,
-                    "protect_content":None,
-                    "reply_to_message_id":None,
-                    "allow_sending_without_reply":None,
-                    "reply_markup":None,
-                }
-
 class message():
     def __init__(self,json,testing=True):
+        print(json)
+        self.json=json
+        self.isok()
+
+    def isok(self):
         self.status=json["ok"]
         if not self.status:
             self.error=json["error_code"]
-            if testing:
-                raise ValueError ("Error code number : {} \n Reason : {}".format(self.error,json["description"]))
+            raise ValueError ("Error code number : {} \n Reason : {}".format(self.error,json["description"]))
+
+
+
+
+        if False:
+            self.status=json["ok"]
+            if not self.status:
+                self.error=json["error_code"]
+                if testing:
+                    
+                else:
+                    print("Error code number : {} \n Reason : {}".format(self.error,json["description"]))
             else:
-                print("Error code number : {} \n Reason : {}".format(self.error,json["description"]))
-        else:
-            self.message_json=json["result"][0]
-            self.update_id=self.message_json["update_id"]
-            self.chat_id=self.message_json["message"]["chat"]["id"]
-            self.text=self.message_json["message"]["text"]
+                self.message_json=json["result"][0]
+                self.update_id=self.message_json["update_id"]
+                self.chat_id=self.message_json["message"]["chat"]["id"]
+                self.text=self.message_json["message"]["text"]
+
+    
 
 class button:
-    def __init__(self,text,callback):
-        pass
+    def __init__(self,text,**kwarg):
+        self.button={"text":text}
+        for i in kwarg:
+            self.button[i]=kwarg[i]
+    
+    def to_inline(self,callback,**kwarg):
+        self.button["callback_data"]=callback
+        return self.button
 
 class keyboard:
     def __init__(self,buttons,shape=None):
-        if shape==None:
-            shape=[len(buttons),1]
-        array=[]
-        for i in buttons:
-            array+=[{"text":i}]
-        self.keyboard=array
+        self.keyboard=[]
+        for text in buttons:
+            self.keyboard+=[button(text)]
 
-    def to_inline(self,callback_data=None):#do a function in the buttons class then call it iteratively
-        if callback_data!=None:
-            if len(self.keyboard)!=len(callback_data):
-                raise ValueError ("keyboard and callback data dimension mismatch")
-        for dict,i in list(zip(self.keyboard,range(len(self.keyboard)))):
-            dict["callback_data"]=i
-        self.keyboard={"inline_keyboard":[self.keyboard]}
+    def to_inline(self,callback_data=None):
+        if callback_data==None:
+            callback_data=range(len(self.keyboard))
+        for i in range(len(self.keyboard)):
+            self.keyboard[i]=self.keyboard[i].to_inline(callback_data[i])
+        return {"inline_keyboard":[self.keyboard]}
 
 class telegram:
     def __init__(self,TOKEN):
@@ -69,19 +74,11 @@ class telegram:
         if offset==None:
             return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/getUpdates").json()
         elif isinstance(offset,int):
-            print(offset)
             return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/getUpdates?offset="+str(offset)).json()
   
-    def InlineMarkupButton(self,**kwargs):#deprecated?
-        button={}
-        for i in kwargs:
-            button[i]=kwargs[i]
-        return button
-
     def sendMessage(self,**kwargs):
         params=self.to_message(**kwargs)
         params["method"]="sendMessage"
-        print(params)
         return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/",json=params)
 
     def to_message(self,**kwargs):
