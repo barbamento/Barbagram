@@ -7,34 +7,36 @@ import polling2
 import json
 
 class message():
-    def __init__(self,json,testing=True):
+    def __init__(self,json):
         print(json)
         self.json=json
-        self.isok()
+        if not self.isok():
+            pass
+        self.type=self.message_type()
+        self.store_constant()
 
     def isok(self):
-        self.status=json["ok"]
+        self.status=self.json["ok"]
         if not self.status:
             self.error=json["error_code"]
             raise ValueError ("Error code number : {} \n Reason : {}".format(self.error,json["description"]))
+        return self.status
+        
+    def message_type(self):
+        self.type=list(self.json["result"][-1].keys())[1]
+        return self.type
 
-
-
-
-        if False:
-            self.status=json["ok"]
-            if not self.status:
-                self.error=json["error_code"]
-                if testing:
-                    
-                else:
-                    print("Error code number : {} \n Reason : {}".format(self.error,json["description"]))
-            else:
-                self.message_json=json["result"][0]
-                self.update_id=self.message_json["update_id"]
-                self.chat_id=self.message_json["message"]["chat"]["id"]
-                self.text=self.message_json["message"]["text"]
-
+    def store_constant(self):
+        self.message_json=self.json["result"][0]
+        self.update_id=self.message_json["update_id"]
+        print(self.message_json.keys())
+        print(self.message_json[self.type].keys())
+        if self.type=="callback_query":
+            self.text=self.message_json[self.type]["data"]
+            self.chat_id=self.message_json[self.type]["message"]["chat"]["id"]
+        elif self.type=="message":
+            self.text=self.message_json[self.type]["text"]
+            self.chat_id=self.message_json[self.type]["chat"]["id"]
     
 
 class button:
