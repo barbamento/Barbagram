@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import time
 from typing import ValuesView
 from typing_extensions import ParamSpec
@@ -8,10 +9,9 @@ import json
 
 class message():
     def __init__(self,json):
-        print(json)
         self.json=json
         if not self.isok():
-            pass
+            raise ValueError("Not connected to the server")
         self.type=self.message_type()
         self.store_constant()
 
@@ -29,8 +29,6 @@ class message():
     def store_constant(self):
         self.message_json=self.json["result"][0]
         self.update_id=self.message_json["update_id"]
-        print(self.message_json.keys())
-        print(self.message_json[self.type].keys())
         if self.type=="callback_query":
             self.text=self.message_json[self.type]["data"]
             self.chat_id=self.message_json[self.type]["message"]["chat"]["id"]
@@ -50,17 +48,31 @@ class button:
         return self.button
 
 class keyboard:
-    def __init__(self,buttons,shape=None):
+    def __init__(self,buttons,orientation="orizontal"):
         self.keyboard=[]
         for text in buttons:
             self.keyboard+=[button(text)]
 
-    def to_inline(self,callback_data=None):
+    def to_keyboard(self,orientation="orizontal"):
+        kb=[i.button for i in self.keyboard]
+        if orientation=="orizontal":
+            return {"keyboard":[kb]}
+        elif orientation=="vertical":
+            return {"keyboard":[ [i] for i in kb]}
+        else:
+            raise ValueError("orientation invalid")
+
+    def to_inline(self,callback_data=None,orientation="orizontal"):
         if callback_data==None:
             callback_data=range(len(self.keyboard))
         for i in range(len(self.keyboard)):
             self.keyboard[i]=self.keyboard[i].to_inline(callback_data[i])
-        return {"inline_keyboard":[self.keyboard]}
+        if orientation=="orizontal":
+            return {"inline_keyboard":[self.keyboard]}
+        elif orientation=="vertical":
+            return {"inline_keyboard":[ [i] for i in self.keyboard]}
+        else:
+            raise ValueError("orientation invalid")
 
 class telegram:
     def __init__(self,TOKEN):
