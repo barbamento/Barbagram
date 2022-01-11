@@ -33,8 +33,16 @@ class message():
             self.text=self.message_json[self.type]["data"]
             self.chat_id=self.message_json[self.type]["message"]["chat"]["id"]
         elif self.type=="message":
-            self.text=self.message_json[self.type]["text"]
             self.chat_id=self.message_json[self.type]["chat"]["id"]
+            if "photo" in self.message_json["message"].keys():
+                self.type="photo"
+                self.file_id=self.message_json["message"]["photo"][-1]["file_id"]
+                #self.img_size=[]
+                if "caption" in self.message_json["message"].keys():
+                    self.text=self.message_json["message"]["caption"]
+            if "text" in self.message_json["message"].keys():
+                self.text=self.message_json[self.type]["text"]
+                
     
 
 class button:
@@ -79,10 +87,17 @@ class telegram:
         self.TOKEN=TOKEN
 
     def print_link(self):
-        print("https://api.telegram.org/bot"+str(self.TOKEN)+"/getMe")
+        print("https://api.telegram.org/bot"+str(self.TOKEN))
 
     def getMe(self):
         return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/getMe").json()
+
+    def open_photo(self,file_id):
+        return "https://api.telegram.org/file/bot"+str(self.TOKEN)+"/"+str(file_id)
+
+    def getFile(self,file_id):
+        return requests.get("https://api.telegram.org/bot"+str(self.TOKEN)+"/getFile?file_id="+str(file_id)).json()
+        
 
     def getUpdates(self,offset=None):
         if offset==None:
@@ -101,7 +116,7 @@ class telegram:
             base_structure[i]=kwargs[i]
         return base_structure
 
-    def start_bot(self,func,step=1,timeout=0,
+    def start_bot(self,func,step=1,timeout=0,Testing=False,
                 **kwargs):
         """
         That's the corpus of the bot, it polls in search for updates, then it applies the function passed as argument
@@ -119,6 +134,8 @@ class telegram:
             if incoming_message["result"]==[]:
                 offset=None
             else:
+                if Testing:
+                    print(incoming_message)
                 incoming_message=message(json=incoming_message)
                 func(incoming_message)
                 offset=incoming_message.update_id+1
